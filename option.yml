@@ -1,0 +1,22 @@
+download:
+  cache: true # 如果要下载的文件在磁盘上已存在，不用再下一遍了吧？默认为true
+  image:
+    decode: true # JM的原图是混淆过的，要不要还原？默认为true
+    suffix: .jpg # 把图片都转为.jpg格式，默认为null，表示不转换。
+  threading:
+    # image: 同时下载的图片数，默认是30张图
+    # 数值大，下得快，配置要求高，对禁漫压力大
+    # 数值小，下得慢，配置要求低，对禁漫压力小
+    # PS: 禁漫网页一次最多请求50张图
+    image: 30
+    # photo: 同时下载的章节数，不配置默认是cpu的线程数。例如8核16线程的cpu → 16.
+    photo: 16
+
+plugins:
+  after_photo:
+    # 把章节的所有图片合并为一个pdf的插件
+    # 使用前需要安装依赖库: [pip install img2pdf]
+    - plugin: img2pdf
+      kwargs:
+        pdf_dir: C:/Users/29441/Desktop/炫压抑/jm #pdf存放文件夹
+        filename_rule: Pid # pdf命名规则，P代表photo, id代表使用photo.id也就是章节id

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漫画下载 & PDF阅读器</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #5a75f0;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --gray-light: #f8f9fa;
+            --gray: #e9ecef;
+            --gray-dark: #495057;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2.5fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--gray-dark);
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: var(--transition);
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .btn:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #38b6ff;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #e51e79;
+        }
+
+        .btn:disabled {
+            background: var(--gray-dark);
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .alert-success {
+            background: rgba(76, 201, 240, 0.1);
+            color: #0284c7;
+            border: 1px solid var(--success);
+            display: block;
+        }
+
+        .alert-error {
+            background: rgba(247, 37, 133, 0.1);
+            color: #be123c;
+            border: 1px solid var(--danger);
+            display: block;
+        }
+
+        .pdf-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .pdf-item {
+            padding: 16px;
+            border-radius: 8px;
+            background: var(--gray-light);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pdf-item:hover {
+            background: var(--gray);
+            transform: translateX(4px);
+        }
+
+        .pdf-item-info {
+            flex: 1;
+        }
+
+        .pdf-item-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: var(--secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pdf-item-size {
+            font-size: 12px;
+            color: var(--gray-dark);
+        }
+
+        .pdf-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pdf-item-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: var(--transition);
+        }
+
+        .pdf-view-container {
+            width: 100%;
+            height: 700px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: white;
+            display: none;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray-dark);
+            font-size: 14px;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: var(--gray);
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--gray-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+    </style>
+    <!-- 引入图标库（无需下载，在线引入） -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧：下载面板 + PDF列表 -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-download"></i> 漫画下载
+                </h2>
+            </div>
+            
+            <div class="alert" id="alertBox"></div>
+            
+            <div class="form-group">
+                <label for="albumId">漫画ID</label>
+                <input type="number" id="albumId" placeholder="请输入数字ID（例如：12345）">
+            </div>
+            
+            <button class="btn" onclick="downloadComic()">
+                <i class="fas fa-cloud-download-alt"></i> 下载并加密
+            </button>
+            
+            <div class="card-header" style="margin-top: 30px;">
+                <h2 class="card-title">
+                    <i class="fas fa-file-pdf"></i> 本地PDF文件
+                </h2>
+            </div>
+            
+            <div class="pdf-list" id="pdfList">
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-file-pdf-o"></i>
+                    <p>暂无PDF文件，下载漫画后将显示在此处</p>
+                </div>
+            </div>
+            
+            <button class="btn btn-success" onclick="refreshPdfList()">
+                <i class="fas fa-sync-alt"></i> 刷新文件列表
+            </button>
+        </div>
+
+        <!-- 右侧：PDF预览面板 -->
+        <div class="card" style="padding: 0;">
+            <div class="card-header" style="padding: 0 24px; margin: 0;">
+                <h2 class="card-title" id="pdfTitle">
+                    <i class="fas fa-book-open"></i> PDF阅读器
+                </h2>
+            </div>
+            
+            <div class="pdf-view-container" id="pdfViewContainer">
+                <iframe class="pdf-viewer" id="pdfViewer"></iframe>
+            </div>
+            
+            <div class="empty-state" style="margin: 0;" id="pdfEmptyState">
+                <i class="fas fa-eye"></i>
+                <p>选择左侧PDF文件或下载漫画后，可在此预览</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后获取PDF列表
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshPdfList();
+            window.currentPdfFilename = '';
+        });
+
+        // 显示提示框
+        function showAlert(msg, isSuccess = true) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = isSuccess ? 'alert alert-success' : 'alert alert-error';
+            alertBox.innerHTML = `<i class="fas fa-${isSuccess ? 'check-circle' : 'exclamation-circle'}"></i> ${msg}`;
+            // 3秒后自动隐藏（错误提示不隐藏）
+            if (isSuccess) {
+                setTimeout(() => {
+                    alertBox.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 刷新PDF列表
+        async function refreshPdfList() {
+            try {
+                const response = await fetch('/api/get-pdf-list');
+                const data = await response.json();
+                
+                const pdfList = document.getElementById('pdfList');
+                const emptyState = document.getElementById('emptyState');
+                
+                if (data.success && data.pdf_list.length > 0) {
+                    emptyState.style.display = 'none';
+                    pdfList.innerHTML = '';
+                    
+                    data.pdf_list.forEach(pdf => {
+                        const pdfItem = document.createElement('div');
+                        pdfItem.className = 'pdf-item';
+                        pdfItem.innerHTML = `
+                            <div class="pdf-item-info">
+                                <div class="pdf-item-name">${pdf.filename}</div>
+                                <div class="pdf-item-size">大小：${pdf.size} MB</div>
+                            </div>
+                            <div class="pdf-item-actions">
+                                <button class="pdf-item-btn btn-success" onclick="viewPdfByFilename('${pdf.filename}')">
+                                    <i class="fas fa-eye"></i> 预览
+                                </button>
+                                <button class="pdf-item-btn btn-danger" onclick="downloadPdfByFilename('${pdf.filename}')">
+                                    <i class="fas fa-download"></i> 下载
+                                </button>
+                            </div>
+                        `;
+                        // 点击条目直接预览
+                        pdfItem.addEventListener('click', (e) => {
+                            if (!e.target.closest('.pdf-item-actions')) {
+                                viewPdfByFilename(pdf.filename);
+                            }
+                        });
+                        pdfList.appendChild(pdfItem);
+                    });
+                } else {
+                    emptyState.style.display = 'block';
+                    pdfList.innerHTML = '';
+                    if (!data.success) {
+                        showAlert(data.msg, false);
+                    }
+                }
+            } catch (error) {
+                showAlert(`刷新PDF列表失败：${error.message}`, false);
+                console.error("刷新PDF列表错误：", error);
+            }
+        }
+
+        // 下载漫画
+        async function downloadComic() {
+            const albumIdInput = document.getElementById('albumId');
+            const albumId = albumIdInput.value.trim();
+            
+            if (!albumId) {
+                showAlert('请输入漫画ID！', false);
+                return;
+            }
+
+            try {
+                showAlert('开始下载漫画，请稍候...', true);
+                
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        album_id: parseInt(albumId)
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP错误：${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert(`${data.msg}（PDF密码：${data.password}）`, true);
+                    albumIdInput.value = '';
+                    // 刷新PDF列表
+                    setTimeout(refreshPdfList, 1000);
+                    // 自动预览刚下载的PDF
+                    viewPdfByFilename(`${albumId}_locked.pdf`);
+                } else {
+                    showAlert(data.msg, false);
+                }
+            } catch (error) {
+                showAlert(`下载失败：${error.message}（请检查ID是否有效或Python服务是否运行）`, false);
+                console.error("下载请求错误：", error);
+            }
+        }
+
+        // 按文件名预览PDF
+        function viewPdfByFilename(filename) {
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfViewContainer = document.getElementById('pdfViewContainer');
+            const pdfEmptyState = document.getElementById('pdfEmptyState');
+            const pdfTitle = document.getElementById('pdfTitle');
+            
+            if (!filename) {
+                showAlert('缺少PDF文件名！', false);
+                return;
+            }
+            
+            try {
+                // 显示预览容器，隐藏空状态
+                pdfViewContainer.style.display = 'block';
+                pdfEmptyState.style.display = 'none';
+                // 更新标题
+                pdfTitle.innerHTML = `<i class="fas fa-book-open"></i> 正在预览：${filename}`;
+                // 拼接预览URL
+                const url = `/api/view-pdf?filename=${encodeURIComponent(filename)}`;
+                pdfViewer.src = url;
+                // 保存当前PDF文件名
+                window.currentPdfFilename = filename;
+            } catch (error) {
+                showAlert(`预览PDF失败：${error.message}`, false);
+                console.error("预览PDF错误：", error);
+            }
+        }
+
+        // 按文件名下载PDF
+        function downloadPdfByFilename(filename) {
+            if (!filename) {
+                showAlert('缺少PDF文件名！', false);
+                return;
+            }
+            
+            try {
+                const url = `/api/download-pdf?filename=${encodeURIComponent(filename)}`;
+                const downloadWindow = window.open(url, '_blank');
+                if (!downloadWindow) {
+                    showAlert('浏览器阻止了弹出窗口，请允许弹窗后重试！', false);
+                }
+            } catch (error) {
+                showAlert(`下载PDF失败：${error.message}`, false);
+                console.error("下载PDF错误：", error);
+            }
+        }
+    </script>
+</body>
+</html>
